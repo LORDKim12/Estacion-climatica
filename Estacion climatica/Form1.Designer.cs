@@ -38,14 +38,14 @@
             // comboBoxSensores
             // 
             this.comboBoxSensores.FormattingEnabled = true;
-            this.comboBoxSensores.Location = new System.Drawing.Point(254, 66);
+            this.comboBoxSensores.Location = new System.Drawing.Point(256, 22);
             this.comboBoxSensores.Name = "comboBoxSensores";
             this.comboBoxSensores.Size = new System.Drawing.Size(224, 24);
             this.comboBoxSensores.TabIndex = 0;
             // 
             // btnLecturasSensor
             // 
-            this.btnLecturasSensor.Location = new System.Drawing.Point(451, 333);
+            this.btnLecturasSensor.Location = new System.Drawing.Point(599, 415);
             this.btnLecturasSensor.Name = "btnLecturasSensor";
             this.btnLecturasSensor.Size = new System.Drawing.Size(179, 23);
             this.btnLecturasSensor.TabIndex = 1;
@@ -54,7 +54,7 @@
             // 
             // btnObtenerLecturas
             // 
-            this.btnObtenerLecturas.Location = new System.Drawing.Point(177, 322);
+            this.btnObtenerLecturas.Location = new System.Drawing.Point(12, 409);
             this.btnObtenerLecturas.Name = "btnObtenerLecturas";
             this.btnObtenerLecturas.Size = new System.Drawing.Size(136, 34);
             this.btnObtenerLecturas.TabIndex = 2;
@@ -65,11 +65,11 @@
             // dataGridViewLecturas
             // 
             this.dataGridViewLecturas.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            this.dataGridViewLecturas.Location = new System.Drawing.Point(254, 143);
+            this.dataGridViewLecturas.Location = new System.Drawing.Point(12, 52);
             this.dataGridViewLecturas.Name = "dataGridViewLecturas";
             this.dataGridViewLecturas.RowHeadersWidth = 51;
             this.dataGridViewLecturas.RowTemplate.Height = 24;
-            this.dataGridViewLecturas.Size = new System.Drawing.Size(240, 150);
+            this.dataGridViewLecturas.Size = new System.Drawing.Size(776, 310);
             this.dataGridViewLecturas.TabIndex = 3;
             // 
             // Form1
