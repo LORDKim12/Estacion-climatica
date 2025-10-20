@@ -53,58 +53,144 @@ namespace Estacion_climatica
                 try
                 {
                     string idSensor = comboBoxSensores.SelectedValue.ToString();
+
+                    // 1. OBTENEMOS LAS LECTURAS (AQUÍ SE CREA LA VARIABLE)
                     var lecturas = await _controller.ObtenerLecturasDeSensor(idSensor);
 
+                    // 2. COMPROBAMOS QUE NO ESTÉN VACÍAS
                     if (lecturas != null && lecturas.Any())
                     {
-                        // === CORRECCIÓN 2: BUSCAR "temp" ===
-                        // Tu API usa "TEMP" para la temperatura
+                        // ===================================================================
+                        // TODO EL CÓDIGO DEBE IR AQUÍ ADENTRO
+                        // ===================================================================
+
+                        // --- SECCIÓN 1: CLIMA BÁSICO (TEMP Y HUMEDAD) ---
                         var tempReading = lecturas.Where(r => r.Variable.ToLower() == "temp")
                                                   .OrderByDescending(r => r.Timestamp)
                                                   .FirstOrDefault();
 
-                        // === CORRECCIÓN 3: BUSCAR "rh" ===
-                        // Tu API usa "RH" para la humedad
                         var humidityReading = lecturas.Where(r => r.Variable.ToLower() == "rh")
                                                       .OrderByDescending(r => r.Timestamp)
                                                       .FirstOrDefault();
 
-                        // 3. Asignar valores a los Labels
                         if (tempReading != null)
                         {
-                            lblTemperatura.Text = $"{tempReading.Value:F1}°{tempReading.Unit}"; // F1 = 1 decimal
+                            lblTemperatura.Text = $"{tempReading.Value:F1}°{tempReading.Unit}";
                         }
-                        else
-                        {
-                            lblTemperatura.Text = "--°C";
-                        }
+                        else { lblTemperatura.Text = "--°C"; }
 
                         if (humidityReading != null)
                         {
-                            // La API no incluye "%" en la unidad de RH, así que lo añadimos manualmente
-                            lblHumedad.Text = $"Humedad: {humidityReading.Value:F0}%"; // F0 = 0 decimales
+                            lblHumedad.Text = $"Humedad: {humidityReading.Value:F0}%";
                         }
-                        else
-                        {
-                            lblHumedad.Text = "Humedad: --%";
-                        }
+                        else { lblHumedad.Text = "Humedad: --%"; }
 
-                        // 4. Calcular valores derivados
+                        // --- SECCIÓN 2: DATOS CALCULADOS (SENSACIÓN) ---
                         if (tempReading != null && humidityReading != null)
                         {
                             double sensacion = CalcularSensacionTermica(tempReading.Value, humidityReading.Value);
                             lblSensacion.Text = $"Sensación: {sensacion:F1}°C";
                         }
+                        else { lblSensacion.Text = "Sensación: --°C"; }
+
+                        // --- SECCIÓN 3: VIENTO Y LLUVIA (DATOS REALES DE LA API) ---
+                        var windReading = lecturas.Where(r => r.Variable.ToLower() == "wind_speed")
+                                                  .OrderByDescending(r => r.Timestamp)
+                                                  .FirstOrDefault();
+
+                        var rainReading = lecturas.Where(r => r.Variable.ToLower() == "rain")
+                                                  .OrderByDescending(r => r.Timestamp)
+                                                  .FirstOrDefault();
+
+                        if (windReading != null)
+                        {
+                            lblViento.Text = $"Viento: {windReading.Value} {windReading.Unit}";
+                        }
+                        else { lblViento.Text = "Viento: --"; }
+
+                        // Reemplazamos la simulación de lluvia por el dato real
+                        if (rainReading != null && rainReading.Value > 0)
+                        {
+                            lblProbLluvia.Text = $"Precipitación: {rainReading.Value} {rainReading.Unit}";
+                            // Actualizar icono si llueve
+                            picIconoClima.Image = Properties.Resources.lluvia;
+                            lblDescripcion.Text = "Lluvioso";
+                        }
                         else
                         {
-                            lblSensacion.Text = "Sensación: --°C";
+                            lblProbLluvia.Text = "Precipitación: 0 mm/h";
+                            // Si no llueve, actualizamos el icono según el resto de datos
+                            ActualizarIconoClima(tempReading?.Value, humidityReading?.Value);
                         }
 
-                        // 5. Simular probabilidad de lluvia
-                        lblProbLluvia.Text = $"Prob. Lluvia: {SimularProbLluvia(humidityReading?.Value)}%";
 
-                        // 6. Actualizar icono
-                        ActualizarIconoClima(tempReading?.Value, humidityReading?.Value);
+                        // --- SECCIÓN 4: CALIDAD DE AIRE ---
+                        var pm25Reading = lecturas.Where(r => r.Variable.ToLower() == "pm2.5")
+                                                  .OrderByDescending(r => r.Timestamp)
+                                                  .FirstOrDefault();
+
+                        var co2Reading = lecturas.Where(r => r.Variable.ToLower() == "co2")
+                                                 .OrderByDescending(r => r.Timestamp)
+                                                 .FirstOrDefault();
+
+                        if (pm25Reading != null)
+                        {
+                            lblPM25.Text = $"PM2.5: {pm25Reading.Value} {pm25Reading.Unit}";
+
+                            if (pm25Reading.Value > 50)
+                            {
+                                lblCalidadGeneral.Text = "Calidad del Aire: Mala";
+                                lblCalidadGeneral.ForeColor = Color.Red;
+                            }
+                            else if (pm25Reading.Value > 25)
+                            {
+                                lblCalidadGeneral.Text = "Calidad del Aire: Regular";
+                                lblCalidadGeneral.ForeColor = Color.Orange;
+                            }
+                            else
+                            {
+                                lblCalidadGeneral.Text = "Calidad del Aire: Buena";
+                                lblCalidadGeneral.ForeColor = Color.Green;
+                            }
+                        }
+                        else
+                        {
+                            lblPM25.Text = "PM2.5: --";
+                            lblCalidadGeneral.Text = "Calidad del Aire: --";
+                            lblCalidadGeneral.ForeColor = Color.Black;
+                        }
+
+                        if (co2Reading != null)
+                        {
+                            lblCO2.Text = $"CO2: {co2Reading.Value} {co2Reading.Unit}";
+                        }
+                        else { lblCO2.Text = "CO2: --"; }
+
+
+                        // --- SECCIÓN 5: DATOS ATMOSFÉRICOS (UV Y PRESIÓN) ---
+                        var pressReading = lecturas.Where(r => r.Variable.ToLower() == "press")
+                                                   .OrderByDescending(r => r.Timestamp)
+                                                   .FirstOrDefault();
+
+                        var uvReading = lecturas.Where(r => r.Variable.ToLower() == "uv")
+                                                .OrderByDescending(r => r.Timestamp)
+                                                .FirstOrDefault();
+
+                        if (pressReading != null)
+                        {
+                            lblPresion.Text = $"Presión: {pressReading.Value:F0} {pressReading.Unit}";
+                        }
+                        else { lblPresion.Text = "Presión: --"; }
+
+                        if (uvReading != null)
+                        {
+                            lblIndiceUV.Text = $"Índice UV: {uvReading.Value:F1}";
+                        }
+                        else { lblIndiceUV.Text = "Índice UV: --"; }
+
+                        // ===================================================================
+                        // FIN DEL CÓDIGO
+                        // ===================================================================
                     }
                     else
                     {
@@ -119,6 +205,37 @@ namespace Estacion_climatica
             else
             {
                 MessageBox.Show("Por favor, seleccione un sensor.");
+            }
+        }
+
+        // (Recuerda que también necesitas el resto de métodos de ayuda:
+        // CalcularSensacionTermica, SimularProbLluvia (que ya no se usa), y ActualizarIconoClima)
+
+        // --- AJUSTE AL MÉTODO 'ActualizarIconoClima' ---
+        // Lo modificamos para que no maneje la lluvia, ya que eso se hace arriba
+        private void ActualizarIconoClima(double? temp, double? humedad)
+        {
+            if (temp == null || humedad == null)
+            {
+                lblDescripcion.Text = "Datos no disponibles";
+                return;
+            }
+
+            // (La lógica de la lluvia ya no va aquí, se maneja en el botón)
+            if (humedad > 70)
+            {
+                picIconoClima.Image = Properties.Resources.nube;
+                lblDescripcion.Text = "Muy Nublado";
+            }
+            else if (temp > 28)
+            {
+                picIconoClima.Image = Properties.Resources.sol;
+                lblDescripcion.Text = "Caluroso";
+            }
+            else
+            {
+                picIconoClima.Image = Properties.Resources.nublado;
+                lblDescripcion.Text = "Parcialmente Nublado";
             }
         }
 
@@ -159,38 +276,11 @@ namespace Estacion_climatica
             return "0";
         }
 
-        private void ActualizarIconoClima(double? temp, double? humedad)
-        {
-            if (temp == null || humedad == null)
-            {
-                // Si tienes un icono "desconocido", ponlo aquí
-                // picIconoClima.Image = Properties.Resources.desconocido; 
-                lblDescripcion.Text = "Datos no disponibles";
-                return;
-            }
+        
 
-            // Asumiendo que tienes imágenes llamadas 'lluvia', 'nube', 'sol', 'nublado'
-            // en tus Recursos (Properties/Resources.resx)
-            if (humedad > 85 && temp > 10)
-            {
-                picIconoClima.Image = Properties.Resources.lluvia;
-                lblDescripcion.Text = "Lluvioso";
-            }
-            else if (humedad > 70)
-            {
-                picIconoClima.Image = Properties.Resources.nube;
-                lblDescripcion.Text = "Muy Nublado";
-            }
-            else if (temp > 28)
-            {
-                picIconoClima.Image = Properties.Resources.sol;
-                lblDescripcion.Text = "Caluroso";
-            }
-            else
-            {
-                picIconoClima.Image = Properties.Resources.nublado;
-                lblDescripcion.Text = "Parcialmente Nublado";
-            }
+        private void btnActualizar_Click(object sender, EventArgs e)
+        {
+
         }
     }
 }
